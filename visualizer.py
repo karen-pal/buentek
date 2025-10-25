@@ -3,9 +3,10 @@ import os
 from pathlib import Path
 from typing import List, Tuple
 import sys
+import random
 
 class ImageGridViewer:
-    def __init__(self, image_dir: str, columnas: int = 3, filas: int = 5):
+    def __init__(self, image_dir: str, columnas: int = 3, filas: int = 5, fade_speed: float = 3.0):
         """
         Inicializa el visualizador de imágenes en grilla.
         
@@ -13,6 +14,7 @@ class ImageGridViewer:
             image_dir: Directorio con las imágenes
             columnas: Número de columnas en la grilla
             filas: Número de filas en la grilla
+            fade_speed: Velocidad del fade in (1.0 = lento, 10.0 = muy rápido)
         """
         pygame.init()
         
@@ -27,6 +29,14 @@ class ImageGridViewer:
         self.columnas = columnas
         self.filas = filas
         self.images_per_page = columnas * filas
+        
+        # Configuración de animación
+        self.fade_speed = fade_speed
+        self.image_alphas = []  # Alpha actual de cada imagen
+        self.current_fade_index = 0  # Índice de la imagen que está haciendo fade
+        self.fade_active = False  # Si hay una animación de fade en curso
+        self.fade_order = []  # Orden en que aparecerán las imágenes
+        self.random_order = False  # Toggle para orden aleatorio
         
         # Colores
         self.BG_COLOR = (0, 0, 0)  # Negro
@@ -100,6 +110,7 @@ class ImageGridViewer:
     def _load_page_images(self):
         """Carga y procesa las imágenes de la página actual."""
         self.loaded_images = []
+        self.image_alphas = []
         start_idx = self.current_page * self.images_per_page
         end_idx = min(start_idx + self.images_per_page, len(self.image_paths))
         
@@ -107,30 +118,80 @@ class ImageGridViewer:
             try:
                 img = pygame.image.load(self.image_paths[i])
                 img = self._fit_image_to_cell(img)
+                # Convertir a formato que soporte alpha
+                img = img.convert_alpha()
                 self.loaded_images.append(img)
+                self.image_alphas.append(0)  # Empezar invisible
             except Exception as e:
                 print(f"Error cargando {self.image_paths[i]}: {e}")
                 # Crear una imagen placeholder en caso de error
-                placeholder = pygame.Surface((100, 100))
-                placeholder.fill((50, 50, 50))
+                placeholder = pygame.Surface((100, 100), pygame.SRCALPHA)
+                placeholder.fill((50, 50, 50, 255))
                 self.loaded_images.append(placeholder)
+                self.image_alphas.append(0)
+        
+        # Generar orden de aparición
+        self._generate_fade_order()
+        
+        # Iniciar animación de fade in
+        self.current_fade_index = 0
+        self.fade_active = True if self.loaded_images else False
+    
+    def _generate_fade_order(self):
+        """Genera el orden en que aparecerán las imágenes."""
+        num_images = len(self.loaded_images)
+        
+        if self.random_order:
+            # Orden aleatorio
+            self.fade_order = list(range(num_images))
+            random.shuffle(self.fade_order)
+        else:
+            # Orden secuencial (izq a der, arriba a abajo)
+            self.fade_order = list(range(num_images))
+    
+    def _update_fade(self, delta_time):
+        """Actualiza el estado de la animación de fade in."""
+        if not self.fade_active:
+            return
+        
+        # Obtener el índice real de la imagen que debe aparecer ahora
+        if self.current_fade_index < len(self.fade_order):
+            actual_image_index = self.fade_order[self.current_fade_index]
+            
+            # Incrementar el alpha de la imagen actual
+            self.image_alphas[actual_image_index] += self.fade_speed * delta_time * 255
+            
+            # Si esta imagen completó su fade, pasar a la siguiente
+            if self.image_alphas[actual_image_index] >= 255:
+                self.image_alphas[actual_image_index] = 255
+                self.current_fade_index += 1
+                
+                # Si terminamos todas las imágenes, desactivar fade
+                if self.current_fade_index >= len(self.loaded_images):
+                    self.fade_active = False
     
     def _draw_grid(self):
-        """Dibuja todas las imágenes en la grilla."""
+        """Dibuja todas las imágenes en la grilla con su alpha correspondiente."""
         for idx, img in enumerate(self.loaded_images):
-            row = idx // self.columnas
-            col = idx % self.columnas
-            
-            # Calcular posición de la celda
-            cell_x = self.margin + col * (self.cell_width + self.margin)
-            cell_y = self.margin + row * (self.cell_height + self.margin)
-            
-            # Centrar la imagen dentro de la celda
-            img_width, img_height = img.get_size()
-            x = cell_x + (self.cell_width - img_width) // 2
-            y = cell_y + (self.cell_height - img_height) // 2
-            
-            self.screen.blit(img, (x, y))
+            # Solo dibujar imágenes que ya tienen algo de alpha
+            if idx < len(self.image_alphas) and self.image_alphas[idx] > 0:
+                row = idx // self.columnas
+                col = idx % self.columnas
+                
+                # Calcular posición de la celda
+                cell_x = self.margin + col * (self.cell_width + self.margin)
+                cell_y = self.margin + row * (self.cell_height + self.margin)
+                
+                # Centrar la imagen dentro de la celda
+                img_width, img_height = img.get_size()
+                x = cell_x + (self.cell_width - img_width) // 2
+                y = cell_y + (self.cell_height - img_height) // 2
+                
+                # Aplicar alpha a la imagen
+                img_copy = img.copy()
+                img_copy.set_alpha(int(self.image_alphas[idx]))
+                
+                self.screen.blit(img_copy, (x, y))
     
     def _handle_events(self):
         """Maneja los eventos de pygame."""
@@ -144,6 +205,25 @@ class ImageGridViewer:
                     self._next_page()
                 elif event.key == pygame.K_LEFT:
                     self._prev_page()
+                elif event.key == pygame.K_UP:
+                    # Aumentar velocidad de fade
+                    self.fade_speed = min(self.fade_speed + 0.05, 20.0)
+                    print(f"Velocidad fade: {self.fade_speed:.1f}")
+                elif event.key == pygame.K_DOWN:
+                    # Disminuir velocidad de fade
+                    self.fade_speed = max(self.fade_speed - 0.5, 0.5)
+                    print(f"Velocidad fade: {self.fade_speed:.1f}")
+                elif event.key == pygame.K_r:
+                    # Reiniciar animación de la página actual
+                    self._restart_fade()
+                    print("Reiniciando animación...")
+                elif event.key == pygame.K_o:
+                    # Toggle orden de aparición
+                    self.random_order = not self.random_order
+                    order_text = "ALEATORIO" if self.random_order else "SECUENCIAL"
+                    print(f"Orden de aparición: {order_text}")
+                    # Reiniciar la animación con el nuevo orden
+                    self._restart_fade()
     
     def _next_page(self):
         """Avanza a la siguiente página de imágenes."""
@@ -161,6 +241,17 @@ class ImageGridViewer:
             max_pages = (len(self.image_paths) + self.images_per_page - 1) // self.images_per_page
             print(f"Página {self.current_page + 1}/{max_pages}")
     
+    def _restart_fade(self):
+        """Reinicia la animación de fade de la página actual."""
+        for i in range(len(self.image_alphas)):
+            self.image_alphas[i] = 0
+        
+        # Regenerar el orden de aparición
+        self._generate_fade_order()
+        
+        self.current_fade_index = 0
+        self.fade_active = True
+    
     def run(self):
         """Loop principal del visualizador."""
         if not self.image_paths:
@@ -173,18 +264,27 @@ class ImageGridViewer:
         print("\nControles:")
         print("  ESPACIO / FLECHA DERECHA: Siguiente página")
         print("  FLECHA IZQUIERDA: Página anterior")
+        print("  FLECHA ARRIBA: Aumentar velocidad de fade")
+        print("  FLECHA ABAJO: Disminuir velocidad de fade")
+        print("  O: Toggle orden (secuencial ↔ aleatorio)")
+        print("  R: Reiniciar animación de página actual")
         print("  ESC / Q: Salir")
+        print(f"\nVelocidad fade inicial: {self.fade_speed:.1f}")
+        print(f"Orden inicial: {'ALEATORIO' if self.random_order else 'SECUENCIAL'}")
         
         while self.running:
+            # Calcular delta time para animaciones suaves
+            delta_time = self.clock.tick(60) / 1000.0  # Convertir a segundos
+            
             self._handle_events()
+            
+            # Actualizar animaciones
+            self._update_fade(delta_time)
             
             # Dibujar
             self.screen.fill(self.BG_COLOR)
             self._draw_grid()
             pygame.display.flip()
-            
-            # Controlar FPS
-            self.clock.tick(60)
         
         pygame.quit()
 
@@ -193,6 +293,7 @@ def main():
     # Configuración
     columnas_imagenes = 3
     filas_imagenes = 5
+    fade_speed = 0.5  # Velocidad del fade (ajustable con flechas arriba/abajo)
     
     # Directorio de imágenes (ajustar según necesidad)
     if len(sys.argv) > 1:
@@ -204,7 +305,8 @@ def main():
     viewer = ImageGridViewer(
         image_dir=image_directory,
         columnas=columnas_imagenes,
-        filas=filas_imagenes
+        filas=filas_imagenes,
+        fade_speed=fade_speed
     )
     viewer.run()
 
