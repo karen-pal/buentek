@@ -21,6 +21,7 @@ class ImageGridViewer:
         # Configuración de pantalla
         self.SCREEN_WIDTH = 1920
         self.SCREEN_HEIGHT = 1080
+        self.fullscreen = False
         self.screen = pygame.display.set_mode((self.SCREEN_WIDTH, self.SCREEN_HEIGHT), 
                                                pygame.NOFRAME)
         pygame.display.set_caption("Image Grid Viewer")
@@ -37,6 +38,8 @@ class ImageGridViewer:
         self.fade_active = False  # Si hay una animación de fade en curso
         self.fade_order = []  # Orden en que aparecerán las imágenes
         self.random_order = False  # Toggle para orden aleatorio
+        self.spiral_mode = False  # Toggle para modo espiral
+        self.spiral_positions = []  # Posiciones de las imágenes en modo espiral
         
         # Colores
         self.BG_COLOR = (0, 0, 0)  # Negro
@@ -133,6 +136,9 @@ class ImageGridViewer:
         # Generar orden de aparición
         self._generate_fade_order()
         
+        # Calcular posiciones en espiral
+        self._calculate_spiral_positions()
+        
         # Iniciar animación de fade in
         self.current_fade_index = 0
         self.fade_active = True if self.loaded_images else False
@@ -148,6 +154,35 @@ class ImageGridViewer:
         else:
             # Orden secuencial (izq a der, arriba a abajo)
             self.fade_order = list(range(num_images))
+    
+    def _calculate_spiral_positions(self):
+        """Calcula las posiciones de las imágenes en modo espiral."""
+        import math
+        
+        num_images = len(self.loaded_images)
+        self.spiral_positions = []
+        
+        # Centro de la pantalla
+        center_x = self.SCREEN_WIDTH / 2
+        center_y = self.SCREEN_HEIGHT / 2
+        
+        # Parámetros de la espiral de Arquímedes
+        # r = a + b * theta
+        a = 50  # Radio inicial
+        b = 30  # Separación entre vueltas
+        
+        for i in range(num_images):
+            # Ángulo en radianes (más vueltas = más separación)
+            theta = i * 0.5  # Ajustar para más o menos apretado
+            
+            # Radio en la espiral
+            r = a + b * theta
+            
+            # Convertir coordenadas polares a cartesianas
+            x = center_x + r * math.cos(theta)
+            y = center_y + r * math.sin(theta)
+            
+            self.spiral_positions.append((x, y))
     
     def _update_fade(self, delta_time):
         """Actualiza el estado de la animación de fade in."""
@@ -175,17 +210,29 @@ class ImageGridViewer:
         for idx, img in enumerate(self.loaded_images):
             # Solo dibujar imágenes que ya tienen algo de alpha
             if idx < len(self.image_alphas) and self.image_alphas[idx] > 0:
-                row = idx // self.columnas
-                col = idx % self.columnas
                 
-                # Calcular posición de la celda
-                cell_x = self.margin + col * (self.cell_width + self.margin)
-                cell_y = self.margin + row * (self.cell_height + self.margin)
-                
-                # Centrar la imagen dentro de la celda
-                img_width, img_height = img.get_size()
-                x = cell_x + (self.cell_width - img_width) // 2
-                y = cell_y + (self.cell_height - img_height) // 2
+                if self.spiral_mode:
+                    # Modo espiral: usar posiciones calculadas
+                    if idx < len(self.spiral_positions):
+                        spiral_x, spiral_y = self.spiral_positions[idx]
+                        img_width, img_height = img.get_size()
+                        
+                        # Centrar la imagen en la posición espiral
+                        x = spiral_x - img_width / 2
+                        y = spiral_y - img_height / 2
+                else:
+                    # Modo grilla normal
+                    row = idx // self.columnas
+                    col = idx % self.columnas
+                    
+                    # Calcular posición de la celda
+                    cell_x = self.margin + col * (self.cell_width + self.margin)
+                    cell_y = self.margin + row * (self.cell_height + self.margin)
+                    
+                    # Centrar la imagen dentro de la celda
+                    img_width, img_height = img.get_size()
+                    x = cell_x + (self.cell_width - img_width) // 2
+                    y = cell_y + (self.cell_height - img_height) // 2
                 
                 # Aplicar alpha a la imagen
                 img_copy = img.copy()
@@ -207,7 +254,7 @@ class ImageGridViewer:
                     self._prev_page()
                 elif event.key == pygame.K_UP:
                     # Aumentar velocidad de fade
-                    self.fade_speed = min(self.fade_speed + 0.05, 20.0)
+                    self.fade_speed = min(self.fade_speed + 0.5, 20.0)
                     print(f"Velocidad fade: {self.fade_speed:.1f}")
                 elif event.key == pygame.K_DOWN:
                     # Disminuir velocidad de fade
@@ -223,6 +270,16 @@ class ImageGridViewer:
                     order_text = "ALEATORIO" if self.random_order else "SECUENCIAL"
                     print(f"Orden de aparición: {order_text}")
                     # Reiniciar la animación con el nuevo orden
+                    self._restart_fade()
+                elif event.key == pygame.K_f:
+                    # Toggle fullscreen
+                    self._toggle_fullscreen()
+                elif event.key == pygame.K_e:
+                    # Toggle modo espiral
+                    self.spiral_mode = not self.spiral_mode
+                    mode_text = "ESPIRAL 🌀" if self.spiral_mode else "GRILLA"
+                    print(f"Modo de visualización: {mode_text}")
+                    # Reiniciar la animación para ver el efecto
                     self._restart_fade()
     
     def _next_page(self):
@@ -249,8 +306,28 @@ class ImageGridViewer:
         # Regenerar el orden de aparición
         self._generate_fade_order()
         
+        # Recalcular posiciones espirales
+        self._calculate_spiral_positions()
+        
         self.current_fade_index = 0
         self.fade_active = True
+    
+    def _toggle_fullscreen(self):
+        """Alterna entre modo fullscreen y windowed."""
+        self.fullscreen = not self.fullscreen
+        
+        if self.fullscreen:
+            self.screen = pygame.display.set_mode(
+                (self.SCREEN_WIDTH, self.SCREEN_HEIGHT), 
+                pygame.FULLSCREEN
+            )
+            print("Modo: FULLSCREEN")
+        else:
+            self.screen = pygame.display.set_mode(
+                (self.SCREEN_WIDTH, self.SCREEN_HEIGHT), 
+                pygame.NOFRAME
+            )
+            print("Modo: VENTANA")
     
     def run(self):
         """Loop principal del visualizador."""
@@ -267,10 +344,13 @@ class ImageGridViewer:
         print("  FLECHA ARRIBA: Aumentar velocidad de fade")
         print("  FLECHA ABAJO: Disminuir velocidad de fade")
         print("  O: Toggle orden (secuencial ↔ aleatorio)")
+        print("  E: Toggle modo espiral 🌀")
+        print("  F: Toggle fullscreen")
         print("  R: Reiniciar animación de página actual")
         print("  ESC / Q: Salir")
         print(f"\nVelocidad fade inicial: {self.fade_speed:.1f}")
         print(f"Orden inicial: {'ALEATORIO' if self.random_order else 'SECUENCIAL'}")
+        print(f"Modo inicial: {'ESPIRAL 🌀' if self.spiral_mode else 'GRILLA'}")
         
         while self.running:
             # Calcular delta time para animaciones suaves
@@ -292,7 +372,7 @@ class ImageGridViewer:
 def main():
     # Configuración
     columnas_imagenes = 3
-    filas_imagenes = 5
+    filas_imagenes = 5*2
     fade_speed = 0.5  # Velocidad del fade (ajustable con flechas arriba/abajo)
     
     # Directorio de imágenes (ajustar según necesidad)
