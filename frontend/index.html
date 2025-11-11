@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OBLIVION-BUSQUEDA SEMANTICA - KARDAVER</title>
+    <title>Córdoba de Antaño</title>
     <style>
         * {
             margin: 0;
@@ -331,9 +331,19 @@
 
             <!-- Modo de visualización -->
             <div class="section">
-                <div class="section-label">Modo</div>
+                <div class="section-label">Visualización</div>
                 <button class="btn active" id="gridModeBtn" onclick="setMode('grid')">Grid</button>
                 <button class="btn" id="spiralModeBtn" onclick="setMode('spiral')">Espiral</button>
+            </div>
+
+            <!-- Modo de búsqueda -->
+            <div class="section">
+                <div class="section-label">Búsqueda</div>
+                <select id="searchMode" onchange="search()">
+                    <option value="hybrid">Híbrida (texto + visual)</option>
+                    <option value="text">Solo texto</option>
+                    <option value="semantic">Solo visual</option>
+                </select>
             </div>
 
             <!-- Configuración de Grid -->
@@ -487,8 +497,13 @@
                 const barrio = document.getElementById('barrioFilter').value;
                 const localidad = document.getElementById('localidadFilter').value;
                 const categoria = document.getElementById('categoriaFilter').value;
+                const searchMode = document.getElementById('searchMode').value;
                 
-                const params = new URLSearchParams({ query, limit: 100 });
+                const params = new URLSearchParams({ 
+                    query, 
+                    limit: 100,
+                    mode: searchMode
+                });
                 if (barrio) params.append('barrio', barrio);
                 if (localidad) params.append('localidad', localidad);
                 if (categoria) params.append('categoria', categoria);
