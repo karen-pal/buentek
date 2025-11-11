@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Córdoba de Antaño - Búsqueda Semántica</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+    <div class="max-w-7xl mx-auto p-6">
+        <h1 class="text-4xl font-bold mb-2 text-blue-900">
+            🏛️ Córdoba de Antaño
+        </h1>
+        <p class="text-gray-600 mb-8">Archivo fotográfico histórico con búsqueda semántica</p>
+        
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <input
+                type="text"
+                id="searchInput"
+                placeholder="Ej: puentes sobre el río, teatros antiguos, plaza san martín..."
+                class="w-full p-4 text-lg border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+            
+            <div class="flex gap-4 flex-wrap">
+                <select id="barrioFilter" class="p-2 border rounded-lg">
+                    <option value="">Todos los barrios</option>
+                </select>
+                
+                <select id="localidadFilter" class="p-2 border rounded-lg">
+                    <option value="">Todas las localidades</option>
+                </select>
+                
+                <select id="categoriaFilter" class="p-2 border rounded-lg">
+                    <option value="">Todas las categorías</option>
+                </select>
+                
+                <button onclick="clearFilters()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+                    Limpiar filtros
+                </button>
+            </div>
+        </div>
+        
+        <div id="stats" class="text-sm text-gray-500 mb-4"></div>
+        
+        <div id="results" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div class="col-span-full text-center text-gray-400 py-12">
+                Escribí algo para buscar imágenes
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000';
+        let debounceTimer;
+
+        async function loadFilters() {
+            const res = await fetch(`${API_URL}/filters`);
+            const data = await res.json();
+            
+            const barrioSelect = document.getElementById('barrioFilter');
+            const localidadSelect = document.getElementById('localidadFilter');
+            const categoriaSelect = document.getElementById('categoriaFilter');
+            
+            data.barrios.forEach(b => {
+                const option = document.createElement('option');
+                option.value = b;
+                option.textContent = b;
+                barrioSelect.appendChild(option);
+            });
+            
+            data.localidades.forEach(l => {
+                const option = document.createElement('option');
+                option.value = l;
+                option.textContent = l;
+                localidadSelect.appendChild(option);
+            });
+            
+            data.categorias.forEach(c => {
+                const option = document.createElement('option');
+                option.value = c;
+                option.textContent = c;
+                categoriaSelect.appendChild(option);
+            });
+        }
+
+        async function loadStats() {
+            const res = await fetch(`${API_URL}/stats`);
+            const data = await res.json();
+            document.getElementById('stats').textContent = 
+                `📊 Total de imágenes indexadas: ${data.total_imagenes}`;
+        }
+
+        function search() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(async () => {
+                const query = document.getElementById('searchInput').value;
+                
+                if (query.length < 3) return;
+                
+                const barrio = document.getElementById('barrioFilter').value;
+                const localidad = document.getElementById('localidadFilter').value;
+                const categoria = document.getElementById('categoriaFilter').value;
+                
+                const params = new URLSearchParams({ query });
+                if (barrio) params.append('barrio', barrio);
+                if (localidad) params.append('localidad', localidad);
+                if (categoria) params.append('categoria', categoria);
+                
+                const res = await fetch(`${API_URL}/search?${params}`);
+                const results = await res.json();
+                
+                displayResults(results);
+            }, 300);
+        }
+
+        function displayResults(results) {
+            const container = document.getElementById('results');
+            
+            if (results.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center text-gray-400 py-12">
+                        No se encontraron resultados
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = results.map(img => `
+                <div class="bg-white rounded-lg shadow overflow-hidden hover:shadow-lg transition">
+                    <img
+                        src="${API_URL}/images/${img.filename}"
+                        alt="${img.descripcion}"
+                        class="w-full h-48 object-cover cursor-pointer"
+                        onclick="window.open('${API_URL}/images/${img.filename}', '_blank')"
+                    />
+                    <div class="p-3">
+                        <p class="font-semibold text-sm">${img.localidad}</p>
+                        ${img.barrio ? `<p class="text-xs text-gray-500">${img.barrio}</p>` : ''}
+                        <p class="text-xs text-gray-600">${img.categoria}</p>
+                        <p class="text-xs text-gray-400 mt-1 truncate" title="${img.descripcion}">
+                            ${img.descripcion}
+                        </p>
+                        <p class="text-xs text-blue-600 mt-1">
+                            ${(img.similarity * 100).toFixed(0)}% relevante
+                        </p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function clearFilters() {
+            document.getElementById('barrioFilter').value = '';
+            document.getElementById('localidadFilter').value = '';
+            document.getElementById('categoriaFilter').value = '';
+            search();
+        }
+
+        document.getElementById('searchInput').addEventListener('input', search);
+        document.getElementById('barrioFilter').addEventListener('change', search);
+        document.getElementById('localidadFilter').addEventListener('change', search);
+        document.getElementById('categoriaFilter').addEventListener('change', search);
+
+        loadFilters();
+        loadStats();
+    </script>
+</body>
+</html>

@@ -3,165 +3,644 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Córdoba de Antaño - Búsqueda Semántica</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>OBLIVION-BUSQUEDA SEMANTICA - KARDAVER</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Panel lateral izquierdo */
+        .sidebar {
+            width: 350px;
+            padding: 30px;
+            background: #000;
+            border-right: 1px solid #222;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: #111;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 3px;
+        }
+
+        /* Input de búsqueda */
+        .search-input {
+            width: 100%;
+            padding: 18px;
+            font-size: 40px;
+            background: #111;
+            border: 2px solid #333;
+            color: #fff;
+            border-radius: 8px;
+            transition: border-color 0.3s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #555;
+        }
+
+        .search-input::placeholder {
+            color: #444;
+        }
+
+        /* Sección */
+        .section {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .section-label {
+            font-size: 16px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Filtros y controles */
+        select, input[type="number"] {
+            width: 100%;
+            padding: 14px;
+            font-size: 18px;
+            background: #111;
+            border: 2px solid #333;
+            color: #fff;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        select:hover, input[type="number"]:hover {
+            border-color: #444;
+        }
+
+        select:focus, input[type="number"]:focus {
+            outline: none;
+            border-color: #555;
+        }
+
+        input[type="number"] {
+            cursor: text;
+        }
+
+        /* Botones */
+        .btn {
+            padding: 14px 20px;
+            font-size: 18px;
+            background: #1a1a1a;
+            border: 2px solid #333;
+            color: #fff;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .btn:hover {
+            background: #2a2a2a;
+            border-color: #444;
+        }
+
+        .btn.active {
+            background: #333;
+            border-color: #555;
+        }
+
+        /* Grid configuración */
+        .grid-config {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        /* Historial */
+        .history-items {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .history-item {
+            padding: 12px;
+            background: #111;
+            border: 1px solid #222;
+            color: #888;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .history-item:hover {
+            background: #1a1a1a;
+            color: #fff;
+            border-color: #333;
+        }
+
+        /* Stats */
+        .stats {
+            font-size: 14px;
+            color: #555;
+            padding: 10px;
+            text-align: center;
+        }
+
+        /* Área de visualización */
+        .viewer {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Modo GRID (Masonry) */
+        .grid-mode {
+            padding: 20px;
+            column-count: 3;
+            column-gap: 15px;
+        }
+
+        .grid-mode img {
+            width: 100%;
+            display: block;
+            margin-bottom: 15px;
+            opacity: 0;
+            animation: fadeInImage 0.6s ease-in forwards;
+            cursor: pointer;
+            transition: transform 0.3s;
+            break-inside: avoid;
+        }
+
+        .grid-mode img:hover {
+            transform: scale(1.02);
+        }
+
+        @keyframes fadeInImage {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Animación escalonada */
+        .grid-mode img:nth-child(1) { animation-delay: 0.05s; }
+        .grid-mode img:nth-child(2) { animation-delay: 0.1s; }
+        .grid-mode img:nth-child(3) { animation-delay: 0.15s; }
+        .grid-mode img:nth-child(4) { animation-delay: 0.2s; }
+        .grid-mode img:nth-child(5) { animation-delay: 0.25s; }
+        .grid-mode img:nth-child(6) { animation-delay: 0.3s; }
+        .grid-mode img:nth-child(7) { animation-delay: 0.35s; }
+        .grid-mode img:nth-child(8) { animation-delay: 0.4s; }
+        .grid-mode img:nth-child(9) { animation-delay: 0.45s; }
+        .grid-mode img:nth-child(10) { animation-delay: 0.5s; }
+        .grid-mode img:nth-child(11) { animation-delay: 0.55s; }
+        .grid-mode img:nth-child(12) { animation-delay: 0.6s; }
+        .grid-mode img:nth-child(13) { animation-delay: 0.65s; }
+        .grid-mode img:nth-child(14) { animation-delay: 0.7s; }
+        .grid-mode img:nth-child(15) { animation-delay: 0.75s; }
+        .grid-mode img:nth-child(n+16) { animation-delay: 0.8s; }
+
+        /* Modo ESPIRAL */
+        .spiral-mode {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        .spiral-mode img {
+            position: absolute;
+            opacity: 0;
+            animation: fadeInSpiral 0.8s ease-out forwards;
+            cursor: pointer;
+            transition: transform 0.3s, z-index 0s;
+        }
+
+        .spiral-mode img:hover {
+            transform: scale(1.1);
+            z-index: 1000;
+        }
+
+        @keyframes fadeInSpiral {
+            from {
+                opacity: 0;
+                transform: scale(0.8) rotate(-10deg);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) rotate(0deg);
+            }
+        }
+
+        /* Empty state */
+        .empty-state {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            font-size: 48px;
+            color: #222;
+        }
+
+        /* Lightbox */
+        .lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            cursor: zoom-out;
+        }
+
+        .lightbox.active {
+            display: flex;
+        }
+
+        .lightbox img {
+            max-width: 95%;
+            max-height: 95%;
+            object-fit: contain;
+        }
+
+        /* Ocultar */
+        .hidden {
+            display: none !important;
+        }
+    </style>
 </head>
-<body class="bg-gray-50">
-    <div class="max-w-7xl mx-auto p-6">
-        <h1 class="text-4xl font-bold mb-2 text-blue-900">
-            🏛️ Córdoba de Antaño
-        </h1>
-        <p class="text-gray-600 mb-8">Archivo fotográfico histórico con búsqueda semántica</p>
-        
-        <div class="bg-white rounded-lg shadow p-6 mb-6">
-            <input
-                type="text"
-                id="searchInput"
-                placeholder="Ej: puentes sobre el río, teatros antiguos, plaza san martín..."
-                class="w-full p-4 text-lg border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <!-- Búsqueda -->
+            <input 
+                type="text" 
+                id="searchInput" 
+                class="search-input" 
+                placeholder="buscar..."
+                autocomplete="off"
             />
-            
-            <div class="flex gap-4 flex-wrap">
-                <select id="barrioFilter" class="p-2 border rounded-lg">
+
+            <!-- Filtros -->
+            <div class="section">
+                <div class="section-label">Filtros</div>
+                <select id="barrioFilter">
                     <option value="">Todos los barrios</option>
                 </select>
-                
-                <select id="localidadFilter" class="p-2 border rounded-lg">
+                <select id="localidadFilter">
                     <option value="">Todas las localidades</option>
                 </select>
-                
-                <select id="categoriaFilter" class="p-2 border rounded-lg">
+                <select id="categoriaFilter">
                     <option value="">Todas las categorías</option>
                 </select>
-                
-                <button onclick="clearFilters()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">
-                    Limpiar filtros
-                </button>
+                <button class="btn" onclick="clearAll()">Limpiar</button>
             </div>
-        </div>
-        
-        <div id="stats" class="text-sm text-gray-500 mb-4"></div>
-        
-        <div id="results" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            <div class="col-span-full text-center text-gray-400 py-12">
-                Escribí algo para buscar imágenes
+
+            <!-- Modo de visualización -->
+            <div class="section">
+                <div class="section-label">Modo</div>
+                <button class="btn active" id="gridModeBtn" onclick="setMode('grid')">Grid</button>
+                <button class="btn" id="spiralModeBtn" onclick="setMode('spiral')">Espiral</button>
             </div>
+
+            <!-- Configuración de Grid -->
+            <div class="section" id="gridConfigSection">
+                <div class="section-label">Columnas</div>
+                <input type="number" id="columnsInput" value="3" min="1" max="10" onchange="updateGrid()">
+            </div>
+
+            <!-- Configuración de Espiral -->
+            <div class="section hidden" id="spiralConfigSection">
+                <div class="section-label">Tamaño de imágenes</div>
+                <input type="number" id="spiralSizeInput" value="200" min="100" max="500" step="50" onchange="updateSpiral()">
+                <div class="section-label">Separación</div>
+                <input type="number" id="spiralSpacingInput" value="30" min="10" max="100" step="5" onchange="updateSpiral()">
+            </div>
+
+            <!-- Historial -->
+            <div class="section" id="historySection" style="display: none;">
+                <div class="section-label">Recientes</div>
+                <div class="history-items" id="historyItems"></div>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats" id="stats"></div>
         </div>
+
+        <!-- Viewer -->
+        <div class="viewer" id="viewer">
+            <div class="empty-state">🔍</div>
+        </div>
+    </div>
+
+    <!-- Lightbox -->
+    <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+        <img id="lightboxImage" src="" alt="">
     </div>
 
     <script>
         const API_URL = 'http://localhost:8000';
         let debounceTimer;
+        let searchHistory = [];
+        let currentMode = 'grid';
+        let currentResults = [];
+        const MAX_HISTORY = 10;
 
+        // Cargar historial
+        function loadHistory() {
+            const saved = localStorage.getItem('searchHistory');
+            if (saved) {
+                searchHistory = JSON.parse(saved);
+                updateHistoryDisplay();
+            }
+        }
+
+        // Guardar en historial
+        function saveToHistory(query) {
+            if (!query || query.length < 3) return;
+            searchHistory = searchHistory.filter(q => q !== query);
+            searchHistory.unshift(query);
+            if (searchHistory.length > MAX_HISTORY) {
+                searchHistory = searchHistory.slice(0, MAX_HISTORY);
+            }
+            localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
+            updateHistoryDisplay();
+        }
+
+        // Actualizar historial
+        function updateHistoryDisplay() {
+            const historySection = document.getElementById('historySection');
+            const historyItems = document.getElementById('historyItems');
+            
+            if (searchHistory.length === 0) {
+                historySection.style.display = 'none';
+                return;
+            }
+            
+            historySection.style.display = 'block';
+            historyItems.innerHTML = searchHistory.map(query => `
+                <div class="history-item" onclick="selectFromHistory('${query.replace(/'/g, "\\'")}')">
+                    ${query}
+                </div>
+            `).join('');
+        }
+
+        // Seleccionar del historial
+        function selectFromHistory(query) {
+            document.getElementById('searchInput').value = query;
+            search();
+        }
+
+        // Cargar filtros
         async function loadFilters() {
-            const res = await fetch(`${API_URL}/filters`);
-            const data = await res.json();
-            
-            const barrioSelect = document.getElementById('barrioFilter');
-            const localidadSelect = document.getElementById('localidadFilter');
-            const categoriaSelect = document.getElementById('categoriaFilter');
-            
-            data.barrios.forEach(b => {
-                const option = document.createElement('option');
-                option.value = b;
-                option.textContent = b;
-                barrioSelect.appendChild(option);
-            });
-            
-            data.localidades.forEach(l => {
-                const option = document.createElement('option');
-                option.value = l;
-                option.textContent = l;
-                localidadSelect.appendChild(option);
-            });
-            
-            data.categorias.forEach(c => {
-                const option = document.createElement('option');
-                option.value = c;
-                option.textContent = c;
-                categoriaSelect.appendChild(option);
-            });
+            try {
+                const res = await fetch(`${API_URL}/filters`);
+                const data = await res.json();
+                
+                const barrioSelect = document.getElementById('barrioFilter');
+                const localidadSelect = document.getElementById('localidadFilter');
+                const categoriaSelect = document.getElementById('categoriaFilter');
+                
+                data.barrios.forEach(b => {
+                    const option = document.createElement('option');
+                    option.value = b;
+                    option.textContent = b;
+                    barrioSelect.appendChild(option);
+                });
+                
+                data.localidades.forEach(l => {
+                    const option = document.createElement('option');
+                    option.value = l;
+                    option.textContent = l;
+                    localidadSelect.appendChild(option);
+                });
+                
+                data.categorias.forEach(c => {
+                    const option = document.createElement('option');
+                    option.value = c;
+                    option.textContent = c;
+                    categoriaSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error cargando filtros:', error);
+            }
         }
 
+        // Cargar stats
         async function loadStats() {
-            const res = await fetch(`${API_URL}/stats`);
-            const data = await res.json();
-            document.getElementById('stats').textContent = 
-                `📊 Total de imágenes indexadas: ${data.total_imagenes}`;
+            try {
+                const res = await fetch(`${API_URL}/stats`);
+                const data = await res.json();
+                document.getElementById('stats').textContent = 
+                    `${data.total_imagenes.toLocaleString()} imágenes`;
+            } catch (error) {
+                console.error('Error cargando stats:', error);
+            }
         }
 
+        // Búsqueda
         function search() {
             clearTimeout(debounceTimer);
             debounceTimer = setTimeout(async () => {
-                const query = document.getElementById('searchInput').value;
+                const query = document.getElementById('searchInput').value.trim();
                 
-                if (query.length < 3) return;
+                if (query.length < 3) {
+                    showEmptyState();
+                    return;
+                }
+                
+                saveToHistory(query);
                 
                 const barrio = document.getElementById('barrioFilter').value;
                 const localidad = document.getElementById('localidadFilter').value;
                 const categoria = document.getElementById('categoriaFilter').value;
                 
-                const params = new URLSearchParams({ query });
+                const params = new URLSearchParams({ query, limit: 100 });
                 if (barrio) params.append('barrio', barrio);
                 if (localidad) params.append('localidad', localidad);
                 if (categoria) params.append('categoria', categoria);
                 
-                const res = await fetch(`${API_URL}/search?${params}`);
-                const results = await res.json();
-                
-                displayResults(results);
+                try {
+                    const res = await fetch(`${API_URL}/search?${params}`);
+                    currentResults = await res.json();
+                    displayResults(currentResults);
+                } catch (error) {
+                    console.error('Error en búsqueda:', error);
+                }
             }, 300);
         }
 
+        // Mostrar resultados
         function displayResults(results) {
-            const container = document.getElementById('results');
-            
             if (results.length === 0) {
-                container.innerHTML = `
-                    <div class="col-span-full text-center text-gray-400 py-12">
-                        No se encontraron resultados
-                    </div>
-                `;
+                showEmptyState();
                 return;
             }
-            
-            container.innerHTML = results.map(img => `
-                <div class="bg-white rounded-lg shadow overflow-hidden hover:shadow-lg transition">
-                    <img
-                        src="${API_URL}/images/${img.filename}"
-                        alt="${img.descripcion}"
-                        class="w-full h-48 object-cover cursor-pointer"
-                        onclick="window.open('${API_URL}/images/${img.filename}', '_blank')"
-                    />
-                    <div class="p-3">
-                        <p class="font-semibold text-sm">${img.localidad}</p>
-                        ${img.barrio ? `<p class="text-xs text-gray-500">${img.barrio}</p>` : ''}
-                        <p class="text-xs text-gray-600">${img.categoria}</p>
-                        <p class="text-xs text-gray-400 mt-1 truncate" title="${img.descripcion}">
-                            ${img.descripcion}
-                        </p>
-                        <p class="text-xs text-blue-600 mt-1">
-                            ${(img.similarity * 100).toFixed(0)}% relevante
-                        </p>
-                    </div>
-                </div>
-            `).join('');
+
+            if (currentMode === 'grid') {
+                displayGrid(results);
+            } else {
+                displaySpiral(results);
+            }
         }
 
-        function clearFilters() {
+        // Modo Grid (Masonry)
+        function displayGrid(results) {
+            const viewer = document.getElementById('viewer');
+            const columns = parseInt(document.getElementById('columnsInput').value);
+            
+            viewer.innerHTML = `<div class="grid-mode" style="column-count: ${columns}"></div>`;
+            const gridContainer = viewer.querySelector('.grid-mode');
+            
+            results.forEach(img => {
+                const imgEl = document.createElement('img');
+                imgEl.src = `${API_URL}/images/${img.filename}`;
+                imgEl.alt = img.descripcion;
+                imgEl.loading = 'lazy';
+                imgEl.onclick = () => openLightbox(imgEl.src);
+                gridContainer.appendChild(imgEl);
+            });
+        }
+
+        // Modo Espiral
+        function displaySpiral(results) {
+            const viewer = document.getElementById('viewer');
+            viewer.innerHTML = '<div class="spiral-mode"></div>';
+            const spiralContainer = viewer.querySelector('.spiral-mode');
+            
+            const centerX = viewer.offsetWidth / 2;
+            const centerY = viewer.offsetHeight / 2;
+            const imageSize = parseInt(document.getElementById('spiralSizeInput').value);
+            const spacing = parseInt(document.getElementById('spiralSpacingInput').value);
+            
+            // Parámetros espiral de Arquímedes
+            const a = 50;
+            const b = spacing;
+            
+            results.forEach((img, i) => {
+                const theta = i * 0.5;
+                const r = a + b * theta;
+                
+                const x = centerX + r * Math.cos(theta);
+                const y = centerY + r * Math.sin(theta);
+                
+                const imgEl = document.createElement('img');
+                imgEl.src = `${API_URL}/images/${img.filename}`;
+                imgEl.alt = img.descripcion;
+                imgEl.loading = 'lazy';
+                imgEl.style.left = `${x}px`;
+                imgEl.style.top = `${y}px`;
+                imgEl.style.width = `${imageSize}px`;
+                imgEl.style.height = 'auto';
+                imgEl.style.transform = `translate(-50%, -50%)`;
+                imgEl.style.animationDelay = `${i * 0.05}s`;
+                imgEl.onclick = () => openLightbox(imgEl.src);
+                
+                spiralContainer.appendChild(imgEl);
+            });
+        }
+
+        // Cambiar modo
+        function setMode(mode) {
+            currentMode = mode;
+            
+            document.getElementById('gridModeBtn').classList.toggle('active', mode === 'grid');
+            document.getElementById('spiralModeBtn').classList.toggle('active', mode === 'spiral');
+            
+            document.getElementById('gridConfigSection').classList.toggle('hidden', mode !== 'grid');
+            document.getElementById('spiralConfigSection').classList.toggle('hidden', mode !== 'spiral');
+            
+            if (currentResults.length > 0) {
+                displayResults(currentResults);
+            }
+        }
+
+        // Actualizar grid
+        function updateGrid() {
+            if (currentMode === 'grid' && currentResults.length > 0) {
+                displayGrid(currentResults);
+            }
+        }
+
+        // Actualizar espiral
+        function updateSpiral() {
+            if (currentMode === 'spiral' && currentResults.length > 0) {
+                displaySpiral(currentResults);
+            }
+        }
+
+        // Empty state
+        function showEmptyState() {
+            document.getElementById('viewer').innerHTML = '<div class="empty-state">🔍</div>';
+        }
+
+        // Limpiar
+        function clearAll() {
+            document.getElementById('searchInput').value = '';
             document.getElementById('barrioFilter').value = '';
             document.getElementById('localidadFilter').value = '';
             document.getElementById('categoriaFilter').value = '';
-            search();
+            currentResults = [];
+            showEmptyState();
         }
 
+        // Lightbox
+        function openLightbox(src) {
+            document.getElementById('lightboxImage').src = src;
+            document.getElementById('lightbox').classList.add('active');
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox').classList.remove('active');
+        }
+
+        // Event listeners
         document.getElementById('searchInput').addEventListener('input', search);
         document.getElementById('barrioFilter').addEventListener('change', search);
         document.getElementById('localidadFilter').addEventListener('change', search);
         document.getElementById('categoriaFilter').addEventListener('change', search);
 
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeLightbox();
+        });
+
+        // Inicializar
         loadFilters();
         loadStats();
+        loadHistory();
     </script>
 </body>
 </html>

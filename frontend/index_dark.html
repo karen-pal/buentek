@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Córdoba de Antaño</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1920px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Barra de búsqueda y controles */
+        .search-bar {
+            position: sticky;
+            top: 0;
+            background: #000;
+            padding: 20px 0;
+            z-index: 100;
+            border-bottom: 1px solid #333;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 15px 20px;
+            font-size: 18px;
+            background: #111;
+            border: 1px solid #333;
+            color: #fff;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            transition: border-color 0.3s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #666;
+        }
+
+        .search-input::placeholder {
+            color: #555;
+        }
+
+        /* Filtros */
+        .filters {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        select {
+            padding: 10px 15px;
+            background: #111;
+            border: 1px solid #333;
+            color: #fff;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        select:hover {
+            border-color: #555;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #666;
+        }
+
+        .clear-btn {
+            padding: 10px 20px;
+            background: #222;
+            border: 1px solid #333;
+            color: #888;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .clear-btn:hover {
+            background: #333;
+            color: #fff;
+        }
+
+        /* Historial de búsquedas */
+        .history-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #0a0a0a;
+            border-radius: 8px;
+            border: 1px solid #1a1a1a;
+        }
+
+        .history-title {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .history-items {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .history-item {
+            padding: 6px 12px;
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            color: #aaa;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+
+        .history-item:hover {
+            background: #2a2a2a;
+            color: #fff;
+            border-color: #444;
+        }
+
+        /* Stats */
+        .stats {
+            font-size: 12px;
+            color: #555;
+            margin: 15px 0;
+        }
+
+        /* Grid de imágenes */
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .image-card {
+            background: #0a0a0a;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.3s, opacity 0.3s;
+            opacity: 0;
+            animation: fadeIn 0.5s ease-in forwards;
+            border: 1px solid #1a1a1a;
+        }
+
+        .image-card:hover {
+            transform: translateY(-4px);
+            border-color: #333;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Animación escalonada */
+        .image-card:nth-child(1) { animation-delay: 0.05s; }
+        .image-card:nth-child(2) { animation-delay: 0.1s; }
+        .image-card:nth-child(3) { animation-delay: 0.15s; }
+        .image-card:nth-child(4) { animation-delay: 0.2s; }
+        .image-card:nth-child(5) { animation-delay: 0.25s; }
+        .image-card:nth-child(6) { animation-delay: 0.3s; }
+        .image-card:nth-child(7) { animation-delay: 0.35s; }
+        .image-card:nth-child(8) { animation-delay: 0.4s; }
+        .image-card:nth-child(9) { animation-delay: 0.45s; }
+        .image-card:nth-child(10) { animation-delay: 0.5s; }
+        .image-card:nth-child(11) { animation-delay: 0.55s; }
+        .image-card:nth-child(12) { animation-delay: 0.6s; }
+        .image-card:nth-child(13) { animation-delay: 0.65s; }
+        .image-card:nth-child(14) { animation-delay: 0.7s; }
+        .image-card:nth-child(15) { animation-delay: 0.75s; }
+        .image-card:nth-child(n+16) { animation-delay: 0.8s; }
+
+        .image-wrapper {
+            width: 100%;
+            height: 250px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+        }
+
+        .image-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s;
+        }
+
+        .image-card:hover .image-wrapper img {
+            transform: scale(1.05);
+        }
+
+        .image-info {
+            padding: 12px;
+        }
+
+        .image-location {
+            font-size: 13px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+
+        .image-meta {
+            font-size: 11px;
+            color: #666;
+            display: flex;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .image-desc {
+            font-size: 11px;
+            color: #888;
+            line-height: 1.4;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .similarity-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            background: #1a1a1a;
+            color: #0f0;
+            font-size: 10px;
+            border-radius: 3px;
+            margin-top: 6px;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 100px 20px;
+            color: #444;
+        }
+
+        .empty-state-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .empty-state-text {
+            font-size: 16px;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #555;
+        }
+
+        /* Lightbox */
+        .lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            cursor: zoom-out;
+        }
+
+        .lightbox.active {
+            display: flex;
+        }
+
+        .lightbox img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Barra de búsqueda -->
+        <div class="search-bar">
+            <input 
+                type="text" 
+                id="searchInput" 
+                class="search-input" 
+                placeholder="Buscá imágenes..."
+                autocomplete="off"
+            />
+            
+            <div class="filters">
+                <select id="barrioFilter">
+                    <option value="">Todos los barrios</option>
+                </select>
+                
+                <select id="localidadFilter">
+                    <option value="">Todas las localidades</option>
+                </select>
+                
+                <select id="categoriaFilter">
+                    <option value="">Todas las categorías</option>
+                </select>
+                
+                <button class="clear-btn" onclick="clearAll()">Limpiar</button>
+            </div>
+        </div>
+
+        <!-- Historial de búsquedas -->
+        <div class="history-section" id="historySection" style="display: none;">
+            <div class="history-title">Búsquedas recientes</div>
+            <div class="history-items" id="historyItems"></div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats" id="stats"></div>
+
+        <!-- Grid de resultados -->
+        <div class="image-grid" id="results">
+            <div class="empty-state">
+                <div class="empty-state-icon">🔍</div>
+                <div class="empty-state-text">Escribí algo para buscar</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lightbox -->
+    <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+        <img id="lightboxImage" src="" alt="">
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000';
+        let debounceTimer;
+        let searchHistory = [];
+        const MAX_HISTORY = 10;
+
+        // Cargar historial desde localStorage
+        function loadHistory() {
+            const saved = localStorage.getItem('searchHistory');
+            if (saved) {
+                searchHistory = JSON.parse(saved);
+                updateHistoryDisplay();
+            }
+        }
+
+        // Guardar búsqueda en historial
+        function saveToHistory(query) {
+            if (!query || query.length < 3) return;
+            
+            // Eliminar duplicados
+            searchHistory = searchHistory.filter(q => q !== query);
+            
+            // Agregar al principio
+            searchHistory.unshift(query);
+            
+            // Limitar tamaño
+            if (searchHistory.length > MAX_HISTORY) {
+                searchHistory = searchHistory.slice(0, MAX_HISTORY);
+            }
+            
+            // Guardar en localStorage
+            localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
+            
+            updateHistoryDisplay();
+        }
+
+        // Actualizar visualización del historial
+        function updateHistoryDisplay() {
+            const historySection = document.getElementById('historySection');
+            const historyItems = document.getElementById('historyItems');
+            
+            if (searchHistory.length === 0) {
+                historySection.style.display = 'none';
+                return;
+            }
+            
+            historySection.style.display = 'block';
+            historyItems.innerHTML = searchHistory.map(query => `
+                <div class="history-item" onclick="selectFromHistory('${query.replace(/'/g, "\\'")}')">
+                    ${query}
+                </div>
+            `).join('');
+        }
+
+        // Seleccionar búsqueda del historial
+        function selectFromHistory(query) {
+            document.getElementById('searchInput').value = query;
+            search();
+        }
+
+        // Cargar filtros
+        async function loadFilters() {
+            try {
+                const res = await fetch(`${API_URL}/filters`);
+                const data = await res.json();
+                
+                const barrioSelect = document.getElementById('barrioFilter');
+                const localidadSelect = document.getElementById('localidadFilter');
+                const categoriaSelect = document.getElementById('categoriaFilter');
+                
+                data.barrios.forEach(b => {
+                    const option = document.createElement('option');
+                    option.value = b;
+                    option.textContent = b;
+                    barrioSelect.appendChild(option);
+                });
+                
+                data.localidades.forEach(l => {
+                    const option = document.createElement('option');
+                    option.value = l;
+                    option.textContent = l;
+                    localidadSelect.appendChild(option);
+                });
+                
+                data.categorias.forEach(c => {
+                    const option = document.createElement('option');
+                    option.value = c;
+                    option.textContent = c;
+                    categoriaSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error cargando filtros:', error);
+            }
+        }
+
+        // Cargar estadísticas
+        async function loadStats() {
+            try {
+                const res = await fetch(`${API_URL}/stats`);
+                const data = await res.json();
+                document.getElementById('stats').textContent = 
+                    `${data.total_imagenes.toLocaleString()} imágenes indexadas`;
+            } catch (error) {
+                console.error('Error cargando stats:', error);
+            }
+        }
+
+        // Búsqueda con debounce
+        function search() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(async () => {
+                const query = document.getElementById('searchInput').value.trim();
+                
+                if (query.length < 3) {
+                    showEmptyState();
+                    return;
+                }
+                
+                // Guardar en historial
+                saveToHistory(query);
+                
+                const barrio = document.getElementById('barrioFilter').value;
+                const localidad = document.getElementById('localidadFilter').value;
+                const categoria = document.getElementById('categoriaFilter').value;
+                
+                const params = new URLSearchParams({ query });
+                if (barrio) params.append('barrio', barrio);
+                if (localidad) params.append('localidad', localidad);
+                if (categoria) params.append('categoria', categoria);
+                
+                showLoading();
+                
+                try {
+                    const res = await fetch(`${API_URL}/search?${params}`);
+                    const results = await res.json();
+                    displayResults(results);
+                } catch (error) {
+                    console.error('Error en búsqueda:', error);
+                    showError();
+                }
+            }, 300);
+        }
+
+        // Mostrar resultados
+        function displayResults(results) {
+            const container = document.getElementById('results');
+            
+            if (results.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🤷</div>
+                        <div class="empty-state-text">No se encontraron resultados</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = results.map(img => `
+                <div class="image-card" onclick="openLightbox('${API_URL}/images/${img.filename}')">
+                    <div class="image-wrapper">
+                        <img 
+                            src="${API_URL}/images/${img.filename}" 
+                            alt="${img.descripcion}"
+                            loading="lazy"
+                        />
+                    </div>
+                    <div class="image-info">
+                        <div class="image-location">${img.localidad}</div>
+                        <div class="image-meta">
+                            ${img.barrio ? `<span>${img.barrio}</span>` : ''}
+                            <span>${img.categoria}</span>
+                        </div>
+                        <div class="image-desc" title="${img.descripcion}">
+                            ${img.descripcion}
+                        </div>
+                        <div class="similarity-badge">
+                            ${(img.similarity * 100).toFixed(0)}%
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Estados de UI
+        function showEmptyState() {
+            document.getElementById('results').innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">🔍</div>
+                    <div class="empty-state-text">Escribí algo para buscar</div>
+                </div>
+            `;
+        }
+
+        function showLoading() {
+            document.getElementById('results').innerHTML = `
+                <div class="loading">Buscando...</div>
+            `;
+        }
+
+        function showError() {
+            document.getElementById('results').innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">⚠️</div>
+                    <div class="empty-state-text">Error al buscar. Verificá que el backend esté corriendo.</div>
+                </div>
+            `;
+        }
+
+        // Limpiar todo
+        function clearAll() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('barrioFilter').value = '';
+            document.getElementById('localidadFilter').value = '';
+            document.getElementById('categoriaFilter').value = '';
+            showEmptyState();
+        }
+
+        // Lightbox
+        function openLightbox(src) {
+            document.getElementById('lightboxImage').src = src;
+            document.getElementById('lightbox').classList.add('active');
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox').classList.remove('active');
+        }
+
+        // Event listeners
+        document.getElementById('searchInput').addEventListener('input', search);
+        document.getElementById('barrioFilter').addEventListener('change', search);
+        document.getElementById('localidadFilter').addEventListener('change', search);
+        document.getElementById('categoriaFilter').addEventListener('change', search);
+
+        // Cerrar lightbox con ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeLightbox();
+            }
+        });
+
+        // Inicializar
+        loadFilters();
+        loadStats();
+        loadHistory();
+    </script>
+</body>
+</html>
